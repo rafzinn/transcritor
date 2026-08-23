@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  sintaxe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Checagem de sintaxe
+        run: for f in index.js lib/*.js scripts/*.js; do node --check "$f"; done
+      - name: Nenhum segredo no versionamento
+        run: |
+          ! grep -rIE '(sk-[A-Za-z0-9_-]{20,}|[0-9]{8,10}:AA[A-Za-z0-9_-]{30,})' \
+              --exclude-dir=.git . || { echo "segredo encontrado"; exit 1; }
+      - name: Uma replica so no stack
+        run: grep -q 'replicas: 1' stack.yml
+
+  imagem:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build da imagem
+        run: docker build -t transcritor:ci .
+      - name: Ferramentas presentes na imagem
+        run: |
+          docker run --rm --entrypoint sh transcritor:ci -c \
+            'ffmpeg -version >/dev/null && ffprobe -version >/dev/null && yt-dlp --version'

@@ -1,0 +1,99 @@
+version: "3.8"
+
+services:
+  # Servidor Bot API proprio: teto de arquivo passa de 20 MB para 2 GB e o
+  # arquivo chega como caminho em disco (volume compartilhado abaixo), sem
+  # download HTTP. TELEGRAM_STAT fica FORA de proposito — o entrypoint liga a
+  # porta de estatisticas com qualquer valor nao vazio, inclusive "0".
+  bot-api:
+    image: aiogram/telegram-bot-api:latest
+    networks:
+      - externa
+    environment:
+      - TELEGRAM_LOCAL=1
+      - TELEGRAM_API_ID_FILE=/run/secrets/TELEGRAM_API_ID
+      - TELEGRAM_API_HASH_FILE=/run/secrets/TELEGRAM_API_HASH
+    secrets:
+      - source: tg_api_id
+        target: TELEGRAM_API_ID
+      - source: tg_api_hash
+        target: TELEGRAM_API_HASH
+    volumes:
+      - telegram-files:/var/lib/telegram-bot-api
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 10s
+      resources:
+        limits:
+          memory: 1G
+
+  bot:
+    image: transcritor:latest
+    networks:
+      - externa
+    environment:
+      - TG_CHAT_ID=${TG_CHAT_ID:?defina no .env}   # so este chat fala com o bot
+      - MODELO_TRANSCRICAO=gpt-4o-transcribe
+      - MODELO_TEXTO=gpt-4.1-mini
+      - USD_BRL=5.40                # cambio de referencia do relatorio de custo
+      - BLOCO_SEGUNDOS=1500         # fatia audio a cada 25 min (teto de 25 MB da OpenAI)
+      - VALIDADE_DIAS=14            # transcricoes e audios guardados por 14 dias
+      - AUTO_TRANSCREVER=1          # aceita midia sem exigir /trans antes
+      - LINK_MAX_MB=500             # teto do download por link
+      - LINK_MAX_SEGUNDOS=10800     # 3h de video por link
+      - TZ=America/Sao_Paulo
+      - TG_API_BASE=http://transcritor_bot-api:8081   # servidor proprio: teto de 2 GB
+      - TG_FILES_DIR=/telegram-files                  # mesmo volume do bot-api, lido direto
+      - TG_MAX_MB=4000                                # trava de sanidade (o Telegram nao limita mais)
+    volumes:
+      - ${APP_DIR:-/opt/transcritor}/data:/app/data
+      # cookies opcionais por dominio (<dominio>.txt no formato Netscape):
+      # o YouTube exige sessao logada pra baixar a partir de IP de datacenter
+      - ${APP_DIR:-/opt/transcritor}/cookies:/app/cookies:ro
+      # o servidor local guarda os arquivos aqui; o bot le e apaga depois de usar
+      - telegram-files:/telegram-files
+    secrets:
+      - source: tg_bot_token
+        target: TG_BOT_TOKEN
+      - source: openai_api_key
+        target: OPENAI_API_KEY
+    deploy:
+      # NUNCA passar de 1 replica: a Bot API so admite um leitor de getUpdates
+      # por token — duas replicas roubariam mensagem uma da outra.
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 10s
+      update_config:
+        # stop-first pelo mesmo motivo: no start-first as duas versoes
+        # conviveriam por alguns segundos, as duas fazendo getUpdates.
+        order: stop-first
+      resources:
+        limits:
+          memory: 512M
+
+networks:
+  externa:
+    external: true
+    name: ${DOCKER_NET:-web}
+
+volumes:
+  telegram-files:
+
+# Os nomes reais dos secrets vem do .env: assim o mesmo stack.yml serve pra
+# quem ja tem um secret de OpenAI com outro nome.
+secrets:
+  tg_bot_token:
+    external: true
+    name: ${SECRET_TG_TOKEN:-tg_bot_token}
+  openai_api_key:
+    external: true
+    name: ${SECRET_OPENAI:-openai_api_key}
+  tg_api_id:
+    external: true
+    name: ${SECRET_TG_API_ID:-tg_api_id}
+  tg_api_hash:
+    external: true
+    name: ${SECRET_TG_API_HASH:-tg_api_hash}

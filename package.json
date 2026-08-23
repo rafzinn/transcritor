@@ -1,0 +1,8 @@
+{
+  "name": "transcritor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bot Telegram: audio/video -> texto (OpenAI) + resumo, legenda .srt e copy de Reels",
+  "main": "index.js",
+  "scripts": { "start": "node index.js" }
+}

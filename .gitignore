@@ -1,0 +1,11 @@
+# dados do usuario: transcricoes, audios guardados, contabilidade
+data/
+# cookies de sessao dos sites (credencial)
+cookies/
+# configuracao local com identificadores
+.env
+# arquivos usados para entregar segredo ao docker secret
+*.token
+token.txt
+api.txt
+node_modules/
