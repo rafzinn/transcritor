@@ -306,6 +306,10 @@ transcritor/
 
 ---
 
+## Histórico
+
+Mudanças por versão em [CHANGELOG.md](CHANGELOG.md).
+
 ## Licença
 
 MIT. Veja [LICENSE](LICENSE).
