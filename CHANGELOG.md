@@ -3,6 +3,14 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 versionamento conforme [SemVer](https://semver.org/lang/pt-BR/).
 
+## Não lançado
+
+### Corrigido
+
+- O workflow de CI não iniciava: um `: ` dentro de escalar simples tornava o
+  YAML inválido e o GitHub falhava antes de criar qualquer job. O passo agora
+  valida o `stack.yml` de fato.
+
 ## [1.0.0] — 2026-08-23
 
 Primeira versão em produção.

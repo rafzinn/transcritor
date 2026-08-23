@@ -1,5 +1,9 @@
 # transcritor
 
+[![CI](https://github.com/rafzinn/transcritor/actions/workflows/ci.yml/badge.svg)](https://github.com/rafzinn/transcritor/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/rafzinn/transcritor)](https://github.com/rafzinn/transcritor/releases/latest)
+[![licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-green.svg)](LICENSE)
+
 Bot de Telegram que transforma áudio e vídeo em texto, e o texto em coisas úteis:
 resumo, legenda `.srt` com marcação de tempo e legenda de Reels pronta para
 publicar. Roda em Docker Swarm, usa a API da OpenAI para transcrever e devolve o
