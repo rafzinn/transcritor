@@ -1,8 +1,21 @@
-# transcritor
+<div align="center">
 
-[![CI](https://github.com/rafzinn/transcritor/actions/workflows/ci.yml/badge.svg)](https://github.com/rafzinn/transcritor/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/rafzinn/transcritor)](https://github.com/rafzinn/transcritor/releases/latest)
-[![licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-green.svg)](LICENSE)
+<img src="docs/banner.png" alt="transcritor — áudio e vídeo viram resumo, legenda .srt sincronizada e copy de Reels, com o custo exato de cada trabalho" width="100%">
+
+[![CI](https://img.shields.io/github/actions/workflow/status/rafzinn/transcritor/ci.yml?style=flat-square&label=ci)](https://github.com/rafzinn/transcritor/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/rafzinn/transcritor?style=flat-square)](https://github.com/rafzinn/transcritor/releases/latest)
+[![licença](https://img.shields.io/badge/licen%C3%A7a-MIT-green?style=flat-square)](LICENSE)
+
+[![Node.js 20](https://img.shields.io/badge/Node.js_20-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![Telegram Bot API](https://img.shields.io/badge/Telegram_Bot_API-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://core.telegram.org/bots/api)
+[![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)](https://platform.openai.com/docs/guides/speech-to-text)
+[![FFmpeg](https://img.shields.io/badge/FFmpeg-007808?style=for-the-badge&logo=ffmpeg&logoColor=white)](https://ffmpeg.org)
+[![yt-dlp](https://img.shields.io/badge/yt--dlp-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://github.com/yt-dlp/yt-dlp)
+[![Docker Swarm](https://img.shields.io/badge/Docker_Swarm-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/engine/swarm/)
+
+</div>
+
+# transcritor
 
 Bot de Telegram que transforma áudio e vídeo em texto, e o texto em coisas úteis:
 resumo, legenda `.srt` com marcação de tempo e legenda de Reels pronta para

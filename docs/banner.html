@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>transcritor — banner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     transcritor — banner GitHub 1280x400
+     Sistema: espacamento na escala 4/8/12/16/24/32/48/64;
+     3 niveis de tipo (display/subtitulo/caption); 1 acento
+     (gradiente amber->coral); raios na escala 3/16/999 (pill).
+     ============================================================ */
+  :root {
+    /* cor — papeis semanticos */
+    --bg:        #0B0D12;   /* fundo */
+    --surface:   #141824;   /* superficie (chip do recibo) */
+    --ink-hi:    #F4F6FA;   /* texto primario  (display)      ~17:1  */
+    --ink-mid:   #A9B2C3;   /* texto secundario (subtitulo)   ~8.5:1 */
+    --ink-low:   #8A93A6;   /* texto terciario (metadados)    ~6:1   */
+    --line:      rgba(244,246,250,0.07);  /* fio interno da moldura */
+    --accent:    #FFB224;   /* acento unico (amber) */
+    --accent-2:  #FF7A48;   /* 2a parada do unico gradiente de acento */
+
+    /* espacamento — somente a escala */
+    --s-4: 4px; --s-8: 8px; --s-12: 12px; --s-16: 16px;
+    --s-24: 24px; --s-32: 32px; --s-48: 48px; --s-64: 64px;
+
+    /* tipografia — 3 niveis */
+    --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+    --font-mono:    'JetBrains Mono', 'Cascadia Mono', monospace;
+    --fs-display: 72px;  --lh-display: 1.05; --ls-display: -0.02em;
+    --fs-sub:     20px;  --lh-sub: 1.5;
+    --fs-caption: 12px;  --ls-caption: 0.12em;
+
+    /* medidas compostas da cena visual (grade interna do SVG) */
+    --visual-w: 544px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1280px; height: 400px; overflow: hidden;
+    position: relative;
+    background: var(--bg);
+    box-shadow: inset 0 0 0 1px var(--line);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* camada de fundo: cena onda->texto, sangra a altura toda a direita */
+  .visual svg { overflow: visible; }  /* o glow radial sangra alem do viewBox de proposito */
+  .visual {
+    position: absolute;              /* razao composicional: fundo decorativo */
+    top: 0; right: var(--s-64);
+    width: var(--visual-w); height: 100%;
+  }
+
+  .chip-text {
+    font-family: var(--font-mono);
+    font-size: var(--fs-caption);
+    letter-spacing: 0.02em;
+    fill: var(--ink-mid);
+  }
+  .chip-cost { fill: var(--accent); font-weight: 600; }
+
+  /* coluna editorial */
+  .content {
+    position: relative; z-index: 1;
+    height: 100%;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 var(--s-64);
+  }
+
+  .eyebrow {
+    display: flex; align-items: center; gap: var(--s-12);
+    font-family: var(--font-mono);
+    font-size: var(--fs-caption); font-weight: 600;
+    letter-spacing: var(--ls-caption);
+    color: var(--accent);
+  }
+  .eyebrow::before {
+    content: '';
+    width: var(--s-24); height: 2px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  }
+
+  h1 {
+    margin: var(--s-16) 0;
+    font-size: var(--fs-display); font-weight: 700;
+    line-height: var(--lh-display); letter-spacing: var(--ls-display);
+    color: var(--ink-hi);
+  }
+
+  .sub {
+    max-width: 560px;
+    font-size: var(--fs-sub); font-weight: 400;
+    line-height: var(--lh-sub);
+    color: var(--ink-mid);
+  }
+  .sub strong { font-weight: 400; color: var(--ink-hi); }  /* enfase por cor: nao sintetizar peso nao carregado */
+
+  /* rodape de metadados — terciario, preso a base */
+  .stack {
+    position: absolute;              /* razao composicional: linha-base do banner */
+    left: var(--s-64); bottom: var(--s-32);
+    font-family: var(--font-mono);
+    font-size: var(--fs-caption); font-weight: 400;
+    letter-spacing: var(--ls-caption);
+    color: var(--ink-low);
+  }
+</style>
+</head>
+<body>
+
+  <div class="visual" aria-hidden="true">
+    <svg width="544" height="400" viewBox="0 0 544 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g-accent" x1="8" y1="0" x2="160" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#FFB224"/>
+          <stop offset="1" stop-color="#FF7A48"/>
+        </linearGradient>
+        <radialGradient id="g-glow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#FF9A3C" stop-opacity="0.14"/>
+          <stop offset="1" stop-color="#FF9A3C" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="96" cy="200" rx="240" ry="176" fill="url(#g-glow)"/>
+      <rect x="8" y="172" width="6" height="56" rx="3" fill="url(#g-accent)"/>
+      <rect x="24" y="148" width="6" height="104" rx="3" fill="url(#g-accent)"/>
+      <rect x="40" y="116" width="6" height="168" rx="3" fill="url(#g-accent)"/>
+      <rect x="56" y="88" width="6" height="224" rx="3" fill="url(#g-accent)"/>
+      <rect x="72" y="112" width="6" height="176" rx="3" fill="url(#g-accent)"/>
+      <rect x="88" y="80" width="6" height="240" rx="3" fill="url(#g-accent)"/>
+      <rect x="104" y="102" width="6" height="196" rx="3" fill="url(#g-accent)"/>
+      <rect x="120" y="126" width="6" height="148" rx="3" fill="url(#g-accent)"/>
+      <rect x="136" y="146" width="6" height="108" rx="3" fill="url(#g-accent)"/>
+      <rect x="152" y="162" width="6" height="76" rx="3" fill="url(#g-accent)"/>
+      <rect x="168" y="137" width="6" height="6" rx="3" fill="#ff7a48" opacity="0.95"/>
+      <rect x="168" y="161" width="6" height="6" rx="3" fill="#ff7a48" opacity="0.95"/>
+      <rect x="168" y="185" width="6" height="6" rx="3" fill="#ff7a48" opacity="0.95"/>
+      <rect x="168" y="209" width="6" height="6" rx="3" fill="#ff7a48" opacity="0.95"/>
+      <rect x="168" y="233" width="6" height="6" rx="3" fill="#ff7a48" opacity="0.95"/>
+      <rect x="168" y="257" width="6" height="6" rx="3" fill="#ff7a48" opacity="0.95"/>
+      <rect x="184" y="137" width="6" height="6" rx="3" fill="#ec7e58" opacity="0.9"/>
+      <rect x="184" y="161" width="6" height="6" rx="3" fill="#ec7e58" opacity="0.9"/>
+      <rect x="184" y="185" width="6" height="6" rx="3" fill="#ec7e58" opacity="0.9"/>
+      <rect x="184" y="209" width="6" height="6" rx="3" fill="#ec7e58" opacity="0.9"/>
+      <rect x="184" y="233" width="6" height="6" rx="3" fill="#ec7e58" opacity="0.9"/>
+      <rect x="200" y="161" width="8" height="6" rx="3" fill="#d88368" opacity="0.85"/>
+      <rect x="200" y="185" width="8" height="6" rx="3" fill="#d88368" opacity="0.85"/>
+      <rect x="200" y="209" width="8" height="6" rx="3" fill="#d88368" opacity="0.85"/>
+      <rect x="200" y="233" width="8" height="6" rx="3" fill="#d88368" opacity="0.85"/>
+      <rect x="200" y="257" width="8" height="6" rx="3" fill="#d88368" opacity="0.85"/>
+      <rect x="216" y="161" width="8" height="6" rx="3" fill="#c58778" opacity="0.8"/>
+      <rect x="216" y="185" width="8" height="6" rx="3" fill="#c58778" opacity="0.8"/>
+      <rect x="216" y="209" width="8" height="6" rx="3" fill="#c58778" opacity="0.8"/>
+      <rect x="216" y="233" width="8" height="6" rx="3" fill="#c58778" opacity="0.8"/>
+      <rect x="232" y="185" width="10" height="6" rx="3" fill="#b28b87" opacity="0.75"/>
+      <rect x="232" y="209" width="10" height="6" rx="3" fill="#b28b87" opacity="0.75"/>
+      <rect x="232" y="233" width="10" height="6" rx="3" fill="#b28b87" opacity="0.75"/>
+      <rect x="248" y="161" width="12" height="6" rx="3" fill="#9e9097" opacity="0.68"/>
+      <rect x="248" y="185" width="12" height="6" rx="3" fill="#9e9097" opacity="0.68"/>
+      <rect x="248" y="209" width="12" height="6" rx="3" fill="#9e9097" opacity="0.68"/>
+      <rect x="264" y="185" width="14" height="6" rx="3" fill="#8b94a7" opacity="0.62"/>
+      <rect x="264" y="209" width="14" height="6" rx="3" fill="#8b94a7" opacity="0.62"/>
+      <rect x="288" y="137" width="44" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="340" y="137" width="28" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="376" y="137" width="56" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="440" y="137" width="36" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="484" y="137" width="44" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="288" y="161" width="24" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="320" y="161" width="52" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="380" y="161" width="32" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="420" y="161" width="44" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="472" y="161" width="20" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="500" y="161" width="32" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="288" y="185" width="60" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="356" y="185" width="24" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="388" y="185" width="44" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="440" y="185" width="28" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="476" y="185" width="52" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="288" y="209" width="32" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="328" y="209" width="44" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="380" y="209" width="20" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="408" y="209" width="56" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="472" y="209" width="36" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="288" y="233" width="48" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="344" y="233" width="28" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="380" y="233" width="36" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="424" y="233" width="52" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="484" y="233" width="24" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="516" y="233" width="20" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="288" y="257" width="40" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="336" y="257" width="24" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="368" y="257" width="32" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="408" y="257" width="20" height="6" rx="3" fill="#8B94A7" opacity="0.5"/>
+      <rect x="200" y="288" width="336" height="32" rx="16" fill="#141824" stroke="rgba(244,246,250,0.1)"/>
+      <text x="520" y="304" text-anchor="end" dominant-baseline="central" class="chip-text">1.284 tokens · 41 s · <tspan class="chip-cost">US$ 0,012 · R$ 0,07</tspan></text>
+    </svg>
+  </div>
+
+  <div class="content">
+    <p class="eyebrow">BOT DE TELEGRAM</p>
+    <h1>transcritor</h1>
+    <p class="sub">&Aacute;udio e v&iacute;deo viram <strong>resumo</strong>, <strong>legenda .srt</strong> sincronizada e <strong>copy de Reels</strong> &mdash; com o custo exato de cada trabalho.</p>
+  </div>
+
+  <p class="stack">NODE 20 &middot; TELEGRAM BOT API AT&Eacute; 2 GB &middot; GPT-4O-TRANSCRIBE &middot; FFMPEG &middot; YT-DLP &middot; DOCKER SWARM</p>
+
+</body>
+</html>
