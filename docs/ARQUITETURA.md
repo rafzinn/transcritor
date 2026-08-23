@@ -141,11 +141,15 @@ salvo em disco sobrevive; o que estava em voo, não.
 ## Segurança
 
 - **Um chat autorizado.** `TG_CHAT_ID` é verificado tanto em mensagem quanto em
-  clique de botão. Qualquer outro chat recebe "Bot particular." e vai para o log.
+  clique de botão. Qualquer outro chat é ignorado **em silêncio** e registrado no
+  log: responder confirmaria a existência do bot a quem estivesse sondando, e
+  transformaria o serviço em eco de quem mandasse volume.
 - **Segredos só por `docker secret`**, lidos de `/run/secrets/`. Nada em variável
   de ambiente — `docker service inspect` mostraria.
-- **Nenhuma porta publicada.** Os dois serviços conversam pela rede overlay
-  interna. Não há superfície HTTP.
+- **Nenhuma porta publicada, e rede exclusiva.** Os dois serviços vivem numa
+  overlay própria da stack — nenhum outro container da máquina resolve o nome do
+  `bot-api`, quanto mais o alcança. Não há superfície HTTP para fora nem para os
+  vizinhos.
 - **Cookies são credencial**, tratados como tal: montados somente-leitura,
   copiados para área temporária a cada uso (o `yt-dlp` reescreve o arquivo), e
   fora do versionamento.

@@ -8,7 +8,7 @@ services:
   bot-api:
     image: aiogram/telegram-bot-api:latest
     networks:
-      - externa
+      - interna
     environment:
       - TELEGRAM_LOCAL=1
       - TELEGRAM_API_ID_FILE=/run/secrets/TELEGRAM_API_ID
@@ -32,7 +32,7 @@ services:
   bot:
     image: transcritor:latest
     networks:
-      - externa
+      - interna
     environment:
       - TG_CHAT_ID=${TG_CHAT_ID:?defina no .env}   # so este chat fala com o bot
       - MODELO_TRANSCRICAO=gpt-4o-transcribe
@@ -74,10 +74,13 @@ services:
         limits:
           memory: 512M
 
+# Rede exclusiva desta stack. Nao e "internal: true" porque os dois precisam
+# alcancar Telegram e OpenAI — mas nenhum outro servico da maquina entra aqui,
+# e nada aqui e alcancavel de fora.
 networks:
-  externa:
-    external: true
-    name: ${DOCKER_NET:-web}
+  interna:
+    driver: overlay
+    attachable: false
 
 volumes:
   telegram-files:

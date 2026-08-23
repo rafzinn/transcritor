@@ -237,8 +237,8 @@ código. O acumulado por dia fica em `data/gastos.json` e sai em `/gastos`.
 
 ## Instalação
 
-Pré-requisitos: Docker em modo Swarm, uma rede overlay externa e uma chave da
-OpenAI.
+Pré-requisitos: Docker em modo Swarm e uma chave da OpenAI. A rede é criada
+pela própria stack — nada precisa existir antes.
 
 ```bash
 git clone https://github.com/<usuario>/transcritor.git /opt/transcritor
@@ -264,7 +264,7 @@ Tudo por variável de ambiente, no `stack.yml`:
 
 | Variável | Padrão | Para que serve |
 |---|---|---|
-| `TG_CHAT_ID` | — (obrigatória) | Único chat autorizado. Qualquer outro recebe "Bot particular." |
+| `TG_CHAT_ID` | — (obrigatória) | Único chat autorizado. Qualquer outro é ignorado em silêncio |
 | `MODELO_TRANSCRICAO` | `gpt-4o-transcribe` | Motor padrão. `/modelo` troca em runtime |
 | `MODELO_TEXTO` | `gpt-4.1-mini` | Usado por resumo e Reels |
 | `USD_BRL` | `5.40` | Câmbio de referência do relatório |

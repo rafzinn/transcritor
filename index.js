@@ -339,7 +339,7 @@ async function mensagem(m) {
 
   if (DONO && String(chat) !== DONO) {
     console.log('[bloqueado] chat', chat, m.from?.username || '');
-    return tg.enviar(chat, 'Bot particular.').catch(() => {});
+    return;   // silencio proposital: responder confirmaria o bot a quem sonda
   }
 
   if (/^\/(start|ajuda|help)/i.test(texto)) return tg.enviar(chat, AJUDA);

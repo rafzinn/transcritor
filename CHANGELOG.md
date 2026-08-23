@@ -5,6 +5,15 @@ versionamento conforme [SemVer](https://semver.org/lang/pt-BR/).
 
 ## Não lançado
 
+### Segurança
+
+- Os dois serviços passam a viver numa rede overlay exclusiva da stack, em vez
+  de uma rede compartilhada: nenhum outro container da máquina alcança o
+  `bot-api`. Como efeito colateral bem-vindo, a instalação deixou de exigir uma
+  rede externa criada de antemão.
+- Chat não autorizado é ignorado em silêncio, e não mais respondido — responder
+  confirma a existência do bot a quem sonda.
+
 ### Corrigido
 
 - O workflow de CI não iniciava: um `: ` dentro de escalar simples tornava o
