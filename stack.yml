@@ -30,7 +30,7 @@ services:
           memory: 1G
 
   bot:
-    image: transcritor:latest
+    image: transcritor:${TRANSCRITOR_TAG:-latest}
     networks:
       - interna
     environment:

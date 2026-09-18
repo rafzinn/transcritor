@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Transcritor</title>
+<style>
+  :root {
+    --bg: #f5f5f4; --card: #ffffff; --texto: #1c1917; --mudo: #78716c; --borda: #d6d3d1;
+    --marca: #0f766e; --marca-fraca: #ccfbf1; --erro: #b91c1c; --erro-fraco: #fee2e2; --ok: #15803d;
+    --raio: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c0a09; --card: #1c1917; --texto: #fafaf9; --mudo: #a8a29e; --borda: #44403c;
+      --marca: #2dd4bf; --marca-fraca: #134e4a; --erro: #fca5a5; --erro-fraco: #450a0a; --ok: #86efac;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c0a09; --card: #1c1917; --texto: #fafaf9; --mudo: #a8a29e; --borda: #44403c;
+    --marca: #2dd4bf; --marca-fraca: #134e4a; --erro: #fca5a5; --erro-fraco: #450a0a; --ok: #86efac;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--texto); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--mudo); margin: 0 0 24px; }
+  .zona { border: 2px dashed var(--borda); border-radius: var(--raio); background: var(--card);
+          padding: 40px 16px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; }
+  .zona:hover, .zona:focus-visible { border-color: var(--marca); outline: none; }
+  .zona.sobre { border-color: var(--marca); background: var(--marca-fraca); }
+  .zona strong { display: block; font-size: 18px; }
+  .zona span { color: var(--mudo); font-size: 14px; }
+  .zona input { display: none; }
+  .aceita { color: var(--mudo); font-size: 13px; margin: 8px 0 24px; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--mudo); margin: 0 0 8px; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  li { background: var(--card); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 14px; }
+  .linha { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .nome { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .estado { font-size: 13px; color: var(--mudo); white-space: nowrap; }
+  .estado.pronto { color: var(--ok); }
+  .estado.erro { color: var(--erro); }
+  .barra { height: 6px; background: var(--borda); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+  .barra i { display: block; height: 100%; width: 0; background: var(--marca); transition: width .2s; }
+  .detalhe { font-size: 13px; color: var(--mudo); margin-top: 6px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .msg { font-size: 13px; color: var(--erro); background: var(--erro-fraco); border-radius: 4px; padding: 6px 8px; margin-top: 8px; }
+  button { font: inherit; font-size: 13px; color: var(--mudo); background: none; border: 1px solid var(--borda);
+           border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+  button:hover { color: var(--texto); border-color: var(--texto); }
+  .vazio { color: var(--mudo); font-size: 14px; }
+  .aviso { background: var(--erro-fraco); color: var(--erro); border-radius: var(--raio); padding: 10px 14px; margin-bottom: 16px; font-size: 14px; display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Transcritor</h1>
+  <p class="sub">Solte o áudio ou o vídeo aqui. A transcrição chega no Telegram, no chat do bot.</p>
+
+  <div class="aviso" id="aviso"></div>
+
+  <label class="zona" id="zona" tabindex="0">
+    <strong>Arraste os arquivos para cá</strong>
+    <span>ou clique para escolher</span>
+    <input type="file" id="arquivo" multiple accept="audio/*,video/*,.opus,.ogg,.oga,.wav,.mp3,.m4a,.aac,.flac,.wma,.amr,.mp4,.mkv,.mov,.avi,.webm,.3gp,.mpeg,.mpg,.ts,.wmv">
+  </label>
+  <p class="aceita" id="aceita">Áudio: opus, ogg, wav, mp3, m4a, aac, flac, amr. Vídeo: mp4, mkv, mov, avi, webm. Vários de uma vez, um é transcrito por vez.</p>
+
+  <h2>Fila</h2>
+  <ul id="lista"></ul>
+  <p class="vazio" id="vazio">Nada enviado ainda.</p>
+</main>
+
+<script>
+(() => {
+  const zona = document.getElementById('zona');
+  const input = document.getElementById('arquivo');
+  const lista = document.getElementById('lista');
+  const vazio = document.getElementById('vazio');
+  const aviso = document.getElementById('aviso');
+  const aceita = document.getElementById('aceita');
+
+  // Envios em andamento vivem so aqui (o servidor so sabe deles quando
+  // terminam). O resto da fila vem do servidor a cada 3 s.
+  const enviando = new Map();
+  let servidor = [];
+
+  const MB = (b) => (b / 1048576).toFixed(b < 10 * 1048576 ? 1 : 0) + ' MB';
+  const velocidade = (bps) => bps >= 1048576 ? (bps / 1048576).toFixed(1) + ' MB/s' : Math.max(1, bps / 1024).toFixed(0) + ' kB/s';
+  const rotulo = { enviando: 'Enviando', fila: 'Na fila', processando: 'Transcrevendo', pronto: 'Pronto, veja no Telegram', erro: 'Deu erro' };
+
+  function pintar() {
+    const itens = [...enviando.values(), ...servidor.filter((s) => !enviando.has(s.id))];
+    vazio.style.display = itens.length ? 'none' : '';
+    lista.innerHTML = '';
+    for (const it of itens) {
+      const li = document.createElement('li');
+      const linha = document.createElement('div'); linha.className = 'linha';
+      const nome = document.createElement('div'); nome.className = 'nome'; nome.textContent = it.nome; nome.title = it.nome;
+      const estado = document.createElement('div'); estado.className = 'estado ' + it.estado;
+      estado.textContent = it.estado === 'enviando' ? `${rotulo.enviando} ${it.pct}%` : (rotulo[it.estado] || it.estado);
+      linha.append(nome, estado);
+      li.append(linha);
+      if (it.estado === 'enviando') {
+        const barra = document.createElement('div'); barra.className = 'barra';
+        const i = document.createElement('i'); i.style.width = it.pct + '%'; barra.append(i);
+        const det = document.createElement('div'); det.className = 'detalhe';
+        det.innerHTML = `<span>${MB(it.enviado)} de ${MB(it.bytes)}</span><span>${it.bps ? velocidade(it.bps) : ''}</span>`;
+        const canc = document.createElement('button'); canc.textContent = 'Cancelar'; canc.onclick = () => it.xhr.abort();
+        det.append(canc);
+        li.append(barra, det);
+      } else if (it.estado === 'fila' && it.cancelavel) {
+        const det = document.createElement('div'); det.className = 'detalhe';
+        const canc = document.createElement('button'); canc.textContent = 'Tirar da fila';
+        canc.onclick = async () => { await fetch('/api/fila/' + it.id, { method: 'DELETE' }); atualizar(); };
+        det.append(document.createElement('span'), canc);
+        li.append(det);
+      } else if (it.estado === 'processando') {
+        const barra = document.createElement('div'); barra.className = 'barra';
+        const i = document.createElement('i'); i.style.width = '100%'; i.style.opacity = '.5'; barra.append(i);
+        li.append(barra);
+      }
+      if (it.msg) { const m = document.createElement('div'); m.className = 'msg'; m.textContent = it.msg; li.append(m); }
+      lista.append(li);
+    }
+  }
+
+  async function atualizar() {
+    try {
+      const r = await fetch('/api/fila', { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      servidor = j.itens;
+      aviso.style.display = 'none';
+      if (j.maxMB) aceita.dataset.max = j.maxMB;
+    } catch (e) {
+      aviso.textContent = 'Sem contato com o servidor (' + e.message + '). Está na rede privada?';
+      aviso.style.display = '';
+    }
+    pintar();
+  }
+
+  function enviar(arquivo) {
+    const id = 'local-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const xhr = new XMLHttpRequest();
+    const it = { id, nome: arquivo.name, bytes: arquivo.size, enviado: 0, pct: 0, bps: 0, estado: 'enviando', xhr };
+    enviando.set(id, it);
+    let t0 = Date.now(), b0 = 0;
+
+    xhr.upload.onprogress = (e) => {
+      it.enviado = e.loaded; it.pct = Math.floor(e.loaded / e.total * 100);
+      const dt = (Date.now() - t0) / 1000;
+      if (dt >= 0.5) { it.bps = (e.loaded - b0) / dt; t0 = Date.now(); b0 = e.loaded; }
+      pintar();
+    };
+    xhr.onload = () => {
+      enviando.delete(id);
+      if (xhr.status !== 201) {
+        let msg = 'HTTP ' + xhr.status;
+        try { msg = JSON.parse(xhr.responseText).erro || msg; } catch {}
+        servidor.unshift({ id, nome: arquivo.name, estado: 'erro', msg, quando: Date.now() });
+      }
+      atualizar();
+    };
+    xhr.onerror = () => { enviando.delete(id); servidor.unshift({ id, nome: arquivo.name, estado: 'erro', msg: 'Falha de rede no envio.', quando: Date.now() }); pintar(); };
+    xhr.onabort = () => { enviando.delete(id); pintar(); };
+    xhr.open('PUT', '/api/up?nome=' + encodeURIComponent(arquivo.name));
+    xhr.send(arquivo);
+    pintar();
+  }
+
+  const receber = (arquivos) => { for (const a of arquivos) enviar(a); };
+  input.addEventListener('change', () => { receber(input.files); input.value = ''; });
+  zona.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
+  ['dragenter', 'dragover'].forEach((ev) => zona.addEventListener(ev, (e) => { e.preventDefault(); zona.classList.add('sobre'); }));
+  ['dragleave', 'drop'].forEach((ev) => zona.addEventListener(ev, (e) => { e.preventDefault(); zona.classList.remove('sobre'); }));
+  zona.addEventListener('drop', (e) => receber(e.dataTransfer.files));
+  document.addEventListener('dragover', (e) => e.preventDefault());
+  document.addEventListener('drop', (e) => e.preventDefault());
+  window.addEventListener('beforeunload', (e) => { if (enviando.size) { e.preventDefault(); e.returnValue = ''; } });
+
+  atualizar();
+  setInterval(atualizar, 3000);
+})();
+</script>
+</body>
+</html>

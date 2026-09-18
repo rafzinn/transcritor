@@ -52,6 +52,24 @@ Esperado: base apontando para o serviço local, `true`, o teto configurado e o
 **Para voltar ao servidor oficial:** chame `logOut` no servidor local, remova
 `TG_API_BASE` e faça o deploy de novo.
 
+## Página de upload
+
+Serviço `transcritor_upload` (mesma imagem, `node upload.js`, porta 8090), só
+sobe quando `UPLOAD_HOST` está no `.env`. Elo com o bot = pasta `data/inbox`:
+
+- a página grava `<id>.part` e renomeia para `<id>--<nome>` no fim (o bot nunca
+  vê arquivo pela metade);
+- o bot varre a pasta a cada 2 s, um por vez, o mais antigo primeiro, e só quando
+  não está no meio de um job do chat; ao terminar apaga o arquivo;
+- estado de cada item em `data/inbox/_estado.json` (fila, processando, pronto,
+  erro), que a página lê a cada 3 s; entradas somem em 24 h.
+
+Diagnóstico: `curl -s https://<UPLOAD_HOST>/api/fila` de dentro da rede privada;
+`ls data/inbox` mostra o que está esperando; `docker service logs transcritor_bot
+| grep inbox` mostra falhas da varredura. Se a página abrir mas a fila nunca
+sair de "Na fila", o bot não está rodando ou `TG_CHAT_ID` está vazio (sem dono
+não há para quem responder, e a varredura não roda).
+
 ## Rotação de segredo
 
 Segredo do Swarm é imutável: rotacionar é criar outro e apontar o serviço.

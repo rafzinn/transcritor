@@ -5,6 +5,18 @@ versionamento conforme [SemVer](https://semver.org/lang/pt-BR/).
 
 ## Não lançado
 
+### Adicionado
+
+- **Página web de upload** (`upload.js` + `web/index.html`, serviço opcional em
+  `stack.upload.yml`): área de arrastar-e-soltar que grava o arquivo direto em
+  `data/inbox`, com progresso, velocidade e fila. O bot varre a pasta, transcreve
+  como se o arquivo tivesse vindo pelo chat e responde no mesmo chat. Existe
+  porque pelo Telegram o arquivo faz dois saltos (celular → nuvem → servidor)
+  na velocidade que o Telegram deixa; numa rede privada o envio direto anda na
+  velocidade do link. Sem login — só atrás de middleware que restrinja a origem.
+- `lib/formatos.js`: a lista de extensões aceitas virou fonte única, usada pelo
+  bot e pela página.
+
 ### Segurança
 
 - Os dois serviços passam a viver numa rede overlay exclusiva da stack, em vez
@@ -16,6 +28,8 @@ versionamento conforme [SemVer](https://semver.org/lang/pt-BR/).
 
 ### Corrigido
 
+- `deploy.sh` não reciclava o bot: com a tag `latest` fixa o Swarm não vê
+  imagem nova. Cada build ganha uma tag própria, interpolada nos stacks.
 - O workflow de CI não iniciava: um `: ` dentro de escalar simples tornava o
   YAML inválido e o GitHub falhava antes de criar qualquer job. O passo agora
   valida o `stack.yml` de fato.

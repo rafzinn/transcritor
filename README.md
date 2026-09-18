@@ -269,6 +269,23 @@ O bot já funciona assim, com teto de 20 MB por arquivo. Para levar o teto a
 2 GB, veja [servidor Bot API próprio](docs/OPERACAO.md#servidor-bot-api-próprio)
 — são duas credenciais de `my.telegram.org` e um `logOut`.
 
+### Página de upload (opcional)
+
+Pelo Telegram o arquivo faz dois saltos — celular → nuvem do Telegram →
+servidor — e anda na velocidade que o Telegram deixa. A página de upload grava
+direto na pasta de entrada do bot (`data/inbox`): numa rede privada (Tailscale,
+por exemplo) a velocidade vira a do link, e a transcrição chega no mesmo chat.
+
+A página **não tem login**. Ela só deve existir atrás de algo que restrinja a
+origem — rede privada, allowlist de IP ou auth do proxy. O `stack.upload.yml`
+traz labels de Traefik e exige um middleware para isso (padrão `tailnet-only`);
+sem o middleware definido no proxy o roteador nem sobe, fechado por padrão.
+
+```bash
+# no .env: UPLOAD_HOST, WEB_NETWORK (rede do proxy), UPLOAD_MIDDLEWARES
+./deploy.sh        # com UPLOAD_HOST definido, sobe também o serviço "upload"
+```
+
 ---
 
 ## Configuração
@@ -287,6 +304,7 @@ Tudo por variável de ambiente, no `stack.yml`:
 | `LINK_MAX_MB` | `500` | Teto do download por link |
 | `TG_API_BASE` | API pública | Aponta para o servidor próprio |
 | `TG_MAX_MB` | `4000` | Trava de sanidade no modo local |
+| `UPLOAD_MAX_MB` | `4000` | Teto por arquivo na página de upload |
 
 Segredos entram por `docker secret`, montados em `/run/secrets/` — nunca por
 variável de ambiente, que apareceria em `docker service inspect`.
@@ -305,9 +323,13 @@ transcritor/
 │   ├── link.js           yt-dlp, cookies por domínio, tradução de erro
 │   ├── copy.js           prompts de resumo e Reels, montagem do .srt
 │   ├── precos.js         tabela de preços — fonte única
+│   ├── formatos.js       extensões aceitas — fonte única (bot e página de upload)
 │   └── estado.js         persistência de jobs, áudios e contabilidade
+├── upload.js             página web de upload (opcional): grava em data/inbox
+├── web/index.html        a página: arrastar-e-soltar, progresso, fila
 ├── scripts/smoke.js      teste de fumaça: ffmpeg + OpenAI, sem Telegram
 ├── stack.yml             os dois serviços, secrets, volumes
+├── stack.upload.yml      terceiro serviço, opcional: a página de upload
 └── docs/                 arquitetura, decisões e runbook
 ```
 

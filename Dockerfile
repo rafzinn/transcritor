@@ -8,4 +8,7 @@ WORKDIR /app
 COPY package.json ./
 COPY index.js ./
 COPY lib ./lib
+# pagina de upload (servico opcional, mesma imagem, outro comando)
+COPY upload.js ./
+COPY web ./web
 CMD ["node", "index.js"]

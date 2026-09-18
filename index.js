@@ -21,14 +21,18 @@ const copy   = require('./lib/copy');
 const link   = require('./lib/link');
 const estado = require('./lib/estado');
 const precos = require('./lib/precos');
+const { EXTS } = require('./lib/formatos');
 
 const DONO      = String(process.env.TG_CHAT_ID || '').trim();
 const AUTO      = process.env.AUTO_TRANSCREVER !== '0';   // aceita midia sem /trans antes
 const BLOCO_S   = Number(process.env.BLOCO_SEGUNDOS || 1500);
 const TETO_OPENAI = 24 * 1024 * 1024;                     // limite real: 25 MB por request
 const CFG_ARQ   = path.join(estado.RAIZ, 'config.json');
+// Pasta de entrada da pagina de upload (upload.js): arquivo que cai aqui e
+// transcrito como se tivesse chegado pelo chat, e a resposta vai pro dono.
+const INBOX     = path.join(estado.RAIZ, 'inbox');
+const INBOX_EST = path.join(INBOX, '_estado.json');
 
-const EXTS = /\.(opus|ogg|oga|wav|mp3|m4a|aac|flac|wma|amr|mp4|mkv|mov|avi|webm|3gp|mpeg|mpg|ts|wmv)$/i;
 
 let offset = 0;
 const armado = new Set();      // chats que mandaram /trans e ainda nao mandaram o arquivo
@@ -73,7 +77,7 @@ Botoes pra: resumo, legenda de Reels com 5 hashtags de SEO, legenda .srt com mar
 /ajuda — isto aqui
 
 <b>Limite</b>
-20 MB por arquivo enviado aqui — teto do proprio Telegram pra bot, nao meu. Video maior: cola o link.`;
+20 MB por arquivo enviado aqui — teto do proprio Telegram pra bot, nao meu (com servidor Bot API proprio, 2 GB). Video maior: cola o link, ou usa a pagina de upload se ela estiver no ar.`;
 
 // ── transcricao ───────────────────────────────────────────────────────────
 async function transcreverArquivo(caminho, info, comTempos = false) {
@@ -145,15 +149,17 @@ function relatorio(job) {
 }
 
 async function processar(chat, msg, origem) {
-  if (ocupado.has(chat)) { await tg.enviar(chat, 'Ainda estou com o trabalho anterior. Manda esse daqui a pouco.'); return true; }
+  if (ocupado.has(chat)) { await tg.enviar(chat, 'Ainda estou com o trabalho anterior. Manda esse daqui a pouco.'); return { ok: false, motivo: 'ocupado' }; }
   ocupado.add(chat);
   armado.delete(chat);
 
   const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'trans-'));
-  const aviso = await tg.enviar(chat, origem.tipo === 'link' ? 'Abrindo o link…' : 'Baixando o arquivo…')
+  const aviso = await tg.enviar(chat, origem.tipo === 'link' ? 'Abrindo o link…'
+    : origem.tipo === 'arquivo' ? `Chegou pela web: <code>${tg.esc(origem.info.nome)}</code>` : 'Baixando o arquivo…')
     .catch(() => null);
   const ms = { baixar: 0, ffmpeg: 0, openai: 0 };
   let info = origem.info;
+  let saida = { ok: true };
 
   try {
     let t = Date.now();
@@ -165,6 +171,9 @@ async function processar(chat, msg, origem) {
         `Baixando de <b>${tg.esc(meta.site)}</b>: ${tg.esc(meta.titulo.slice(0, 80))}${meta.duracao ? ` (${media.duracaoHumana(meta.duracao)})` : ''}…`);
       baixado = await link.baixar(origem.url, pasta);
       info = { nome: (meta?.titulo || baixado.nome).slice(0, 120), tipo: `link · ${meta?.site || 'web'}`, bytes: baixado.bytes };
+    } else if (origem.tipo === 'arquivo') {
+      // ja esta em disco (pasta de entrada): nada a baixar
+      baixado = { caminho: origem.caminho, bytes: info.bytes };
     } else {
       // A mensagem do Telegram ja diz o tamanho — barrar aqui evita gastar uma
       // chamada de API so pra ouvir "file is too big".
@@ -180,7 +189,7 @@ async function processar(chat, msg, origem) {
     const sonda = await media.inspecionar(baixado.caminho);
     if (!sonda.temAudio) {
       if (aviso) await tg.editar(chat, aviso.message_id, 'Esse arquivo nao tem faixa de audio — nao ha o que transcrever.');
-      return true;
+      return { ok: false, motivo: 'sem faixa de audio' };
     }
     const opus = path.join(pasta, 'audio.ogg');
     await media.paraOpus(baixado.caminho, opus);
@@ -199,7 +208,7 @@ async function processar(chat, msg, origem) {
 
     if (!r.texto) {
       if (aviso) await tg.editar(chat, aviso.message_id, 'Nao consegui ouvir fala nenhuma nesse arquivo.');
-      return true;
+      return { ok: false, motivo: 'nenhuma fala ouvida' };
     }
 
     const job = estado.salvar({
@@ -219,7 +228,7 @@ async function processar(chat, msg, origem) {
         `Transcricao completa (${r.texto.length} caracteres) — mandei em arquivo porque daria ${blocos.length} mensagens.`);
       await tg.enviar(chat, blocos[0], { escapar: true, prefixo: '<b>Comeco da transcricao</b>\n\n' });
     } else {
-      await tg.enviar(chat, r.texto, { escapar: true, responder_a: msg.message_id });
+      await tg.enviar(chat, r.texto, { escapar: true, responder_a: msg?.message_id });
     }
     const painel = await tg.enviar(chat, relatorio(job), { teclado: tecladoJob(job) });
     job.painel = painel.message_id;
@@ -233,11 +242,54 @@ async function processar(chat, msg, origem) {
     // se o proprio aviso nao chegou a existir, manda mensagem nova
     if (aviso?.message_id) await tg.editar(chat, aviso.message_id, txt);
     else await tg.enviar(chat, txt).catch(() => {});
+    saida = { ok: false, motivo: String(e.message || e).slice(0, 200) };
   } finally {
     fs.rmSync(pasta, { recursive: true, force: true });
     ocupado.delete(chat);
   }
-  return true;
+  return saida;
+}
+
+// ── pasta de entrada (pagina de upload) ───────────────────────────────────
+// O upload.js grava `<id>--<nome>` (via .part + rename, nunca pela metade).
+// Aqui: um por vez, o mais antigo primeiro, respeitando o mesmo trinco por
+// chat que o Telegram usa — se o dono esta no meio de um job pelo chat, a
+// fila espera. O estado de cada item vai pro _estado.json, que a pagina le.
+function anotarInbox(id, dados) {
+  let est = {};
+  try { est = JSON.parse(fs.readFileSync(INBOX_EST, 'utf8')); } catch {}
+  const limite = Date.now() - 86400000;
+  for (const k of Object.keys(est)) if ((est[k].quando || 0) < limite) delete est[k];
+  est[id] = { ...(est[id] || {}), ...dados, quando: Date.now() };
+  fs.writeFileSync(INBOX_EST, JSON.stringify(est, null, 1));
+}
+
+let varrendo = false;
+async function varrerInbox() {
+  if (varrendo || !DONO) return;
+  const chat = Number(DONO);
+  if (ocupado.has(chat)) return;
+  let nomes;
+  try { nomes = fs.readdirSync(INBOX).filter((f) => !f.startsWith('_') && !f.endsWith('.part')).sort(); }
+  catch { return; }
+  if (!nomes.length) return;
+  varrendo = true;
+  const f = nomes[0];
+  const [id, ...resto] = f.split('--');
+  const nome = resto.join('--') || f;
+  const caminho = path.join(INBOX, f);
+  try {
+    const bytes = fs.statSync(caminho).size;
+    anotarInbox(id, { nome, estado: 'processando' });
+    const r = await processar(chat, null, { tipo: 'arquivo', caminho, info: { nome, tipo: 'upload web', bytes } });
+    anotarInbox(id, r.ok ? { estado: 'pronto' } : { estado: 'erro', msg: r.motivo });
+  } catch (e) {
+    console.error('[inbox]', f, e.message);
+    anotarInbox(id, { estado: 'erro', msg: String(e.message || e).slice(0, 200) });
+  } finally {
+    fs.rmSync(caminho, { force: true });
+    varrendo = false;
+  }
 }
 
 // ── botoes ────────────────────────────────────────────────────────────────
@@ -404,5 +456,7 @@ if (!openai.temChave()) { console.error('FALTA o secret OPENAI_API_KEY'); proces
 tg.api('deleteWebhook', { drop_pending_updates: false }).catch(() => {});
 estado.faxina();
 setInterval(() => estado.faxina(), 6 * 3600 * 1000);
+fs.mkdirSync(INBOX, { recursive: true });
+setInterval(varrerInbox, 2000);
 console.log(`[transcritor] no ar · dono=${DONO || 'QUALQUER UM (defina TG_CHAT_ID)'} · motor=${modeloAtual()}`);
 laco();
